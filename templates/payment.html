@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+
+{% block title %}Payment - GreenEnergy{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h3><i class="fas fa-credit-card"></i> Complete Payment</h3>
+                </div>
+                
+                <div class="card-body">
+                    <h5>Order Summary</h5>
+                    
+                    <div class="table-responsive">
+                        <table class="table">
+                            <tr>
+                                <td><strong>Energy Source:</strong></td>
+                                <td>{{ order.listing.title }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Producer:</strong></td>
+                                <td>{{ order.listing.producer.get_full_name|default:order.listing.producer.username }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Quantity:</strong></td>
+                                <td>{{ order.quantity_kwh }} kWh</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Price per kWh:</strong></td>
+                                <td>₹{{ order.listing.price_per_kwh }}</td>
+                            </tr>
+                            <tr class="table-success">
+                                <td><strong>Total Amount:</strong></td>
+                                <td><h4>₹{{ order.total_amount }}</h4></td>
+                            </tr>
+                        </table>
+                    </div>
+                    
+                    <hr>
+                    
+                    <form method="post">
+                        {% csrf_token %}
+                        <h5 class="mb-3">Select Payment Method</h5>
+                        
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="radio" name="payment_method" id="upi" value="UPI" required>
+                            <label class="form-check-label" for="upi">
+                                <i class="fas fa-mobile-alt"></i> UPI (GPay, PhonePe, Paytm)
+                            </label>
+                        </div>
+                        
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="radio" name="payment_method" id="card" value="Credit/Debit Card">
+                            <label class="form-check-label" for="card">
+                                <i class="fas fa-credit-card"></i> Credit / Debit Card
+                            </label>
+                        </div>
+                        
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="radio" name="payment_method" id="netbanking" value="Net Banking">
+                            <label class="form-check-label" for="netbanking">
+                                <i class="fas fa-university"></i> Net Banking
+                            </label>
+                        </div>
+                        
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="radio" name="payment_method" id="wallet" value="Wallet">
+                            <label class="form-check-label" for="wallet">
+                                <i class="fas fa-wallet"></i> Wallet
+                            </label>
+                        </div>
+                        
+                        <div class="alert alert-info">
+                            <i class="fas fa-shield-alt"></i> Your payment is secure and encrypted
+                        </div>
+                        
+                        <button type="submit" class="btn btn-success w-100 btn-lg">
+                            <i class="fas fa-lock"></i> Pay ₹{{ order.total_amount }}
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

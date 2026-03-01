@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+
+{% block title %}Transaction History - GreenEnergy{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <h2><i class="fas fa-history"></i> Transaction History</h2>
+        </div>
+    </div>
+    
+    {% if transactions %}
+        <div class="card">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Transaction ID</th>
+                                <th>Date</th>
+                                <th>Type</th>
+                                <th>From</th>
+                                <th>To</th>
+                                <th>Amount</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for transaction in transactions %}
+                            <tr>
+                                <td><strong>#{{ transaction.id }}</strong></td>
+                                <td>{{ transaction.created_at|date:"M d, Y H:i" }}</td>
+                                <td>
+                                    <span class="badge bg-info">{{ transaction.get_transaction_type_display }}</span>
+                                </td>
+                                <td>{{ transaction.from_user.username }}</td>
+                                <td>{{ transaction.to_user.username }}</td>
+                                <td class="text-success"><strong>₹{{ transaction.amount }}</strong></td>
+                                <td>
+                                    {% if transaction.is_successful %}
+                                        <span class="badge bg-success">✅ Success</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">❌ Failed</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="{% url 'transactions:order_detail' transaction.order.id %}" class="btn btn-sm btn-primary">
+                                        <i class="fas fa-eye"></i> View
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    {% else %}
+        <div class="alert alert-info text-center">
+            <h5><i class="fas fa-inbox"></i> No Transactions Yet</h5>
+            <p>Your transaction history will appear here</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

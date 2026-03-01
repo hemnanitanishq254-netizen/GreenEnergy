@@ -1,0 +1,491 @@
+{% extends 'base.html' %}
+
+{% block title %}Energy Marketplace - GreenEnergy{% endblock %}
+
+{% block content %}
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Cabinet+Grotesk:wght@300;400;500;700;800&display=swap');
+
+  :root {
+    --lime: #a8ff3e;
+    --lime-dim: #7acc1f;
+    --lime-pale: rgba(168,255,62,0.08);
+    --navy: #050c15;
+    --slate: #0a1525;
+    --slate-mid: #0e1f33;
+    --card-glass: rgba(255,255,255,0.03);
+    --border-glass: rgba(168,255,62,0.12);
+    --text-primary: #eef4ff;
+    --text-muted: #6a8aaa;
+    --cyan: #00d4ff;
+    --glow-lime: 0 0 40px rgba(168,255,62,0.35);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  .mp-wrap {
+    font-family: 'Cabinet Grotesk', sans-serif;
+    background: var(--navy);
+    color: var(--text-primary);
+    min-height: 100vh;
+    overflow-x: hidden;
+    position: relative;
+    padding: 0 0 5rem;
+  }
+
+  /* ── NOISE + GRID ── */
+  .noise-overlay {
+    position: fixed; inset: 0; z-index: 0; pointer-events: none; opacity: 0.035;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-size: 256px;
+  }
+  .bg-grid {
+    position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background-image:
+      linear-gradient(rgba(168,255,62,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(168,255,62,0.04) 1px, transparent 1px);
+    background-size: 64px 64px;
+    mask-image: radial-gradient(ellipse 80% 80% at 50% 20%, black 10%, transparent 100%);
+  }
+
+  /* ── ORBS ── */
+  .orb { position: fixed; border-radius: 50%; filter: blur(120px); pointer-events: none; z-index: 0; }
+  .orb-1 { width: 600px; height: 600px; background: radial-gradient(circle, rgba(168,255,62,0.09) 0%, transparent 70%); top: -200px; left: -200px; animation: floatOrb1 12s ease-in-out infinite; }
+  .orb-2 { width: 400px; height: 400px; background: radial-gradient(circle, rgba(0,212,255,0.07) 0%, transparent 70%); bottom: 0; right: -100px; animation: floatOrb2 14s ease-in-out infinite; }
+  @keyframes floatOrb1 { 0%,100% { transform: translate(0,0); } 50% { transform: translate(40px,-50px); } }
+  @keyframes floatOrb2 { 0%,100% { transform: translate(0,0); } 50% { transform: translate(-30px,40px); } }
+
+  /* ── CURSOR ── */
+  .cursor-dot { width: 8px; height: 8px; background: var(--lime); border-radius: 50%; position: fixed; pointer-events: none; z-index: 9999; transform: translate(-50%,-50%); }
+  .cursor-ring { width: 36px; height: 36px; border: 1.5px solid rgba(168,255,62,0.5); border-radius: 50%; position: fixed; pointer-events: none; z-index: 9998; transform: translate(-50%,-50%); transition: width 0.25s, height 0.25s, border-color 0.25s; }
+  .cursor-ring.hover { width: 55px; height: 55px; border-color: var(--lime); }
+
+  /* ── INNER LAYOUT ── */
+  .mp-inner {
+    position: relative; z-index: 1;
+    max-width: 1280px; margin: 0 auto; padding: 0 2rem;
+  }
+
+  /* ── HERO HEADER ── */
+  .mp-hero {
+    padding: 3.5rem 0 2.5rem;
+    display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; gap: 1.5rem;
+    animation: fadeUp 0.7s cubic-bezier(0.22,1,0.36,1) both;
+  }
+  .mp-hero-left {}
+  .mp-page-tag {
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    background: rgba(168,255,62,0.08); border: 1px solid rgba(168,255,62,0.2);
+    border-radius: 100px; padding: 0.35rem 0.9rem; margin-bottom: 1rem;
+    font-size: 0.7rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--lime);
+    font-family: 'Syne', sans-serif; font-weight: 600;
+  }
+  .tag-dot { width: 5px; height: 5px; background: var(--lime); border-radius: 50%; animation: pulse 2s ease infinite; box-shadow: 0 0 6px var(--lime); }
+  @keyframes pulse { 0%,100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.5); opacity: 0.5; } }
+  .mp-title {
+    font-family: 'Syne', sans-serif; font-size: clamp(1.8rem, 3vw, 2.8rem);
+    font-weight: 800; letter-spacing: -0.02em; color: var(--text-primary); margin-bottom: 0.4rem;
+  }
+  .mp-title span { color: var(--lime); }
+  .mp-subtitle { color: var(--text-muted); font-size: 0.95rem; }
+
+  .mp-hero-stats { display: flex; gap: 1rem; flex-wrap: wrap; }
+  .hero-stat {
+    background: var(--card-glass); border: 1px solid var(--border-glass);
+    border-radius: 12px; padding: 0.9rem 1.3rem; text-align: center; backdrop-filter: blur(20px);
+  }
+  .hero-stat-num { font-family: 'Syne', sans-serif; font-size: 1.2rem; font-weight: 800; color: var(--lime); }
+  .hero-stat-label { font-size: 0.68rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-top: 0.1rem; }
+
+  /* ── SEARCH & FILTER BAR ── */
+  .mp-search-bar {
+    background: rgba(255,255,255,0.02); border: 1px solid var(--border-glass);
+    border-radius: 16px; padding: 1.25rem 1.5rem;
+    display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;
+    backdrop-filter: blur(20px); margin-bottom: 2.5rem;
+    animation: fadeUp 0.7s cubic-bezier(0.22,1,0.36,1) 0.1s both;
+  }
+  .mp-search-bar form { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; width: 100%; }
+
+  .search-input-wrap { flex: 1; min-width: 200px; position: relative; }
+  .search-input-wrap .search-icon {
+    position: absolute; left: 1rem; top: 50%; transform: translateY(-50%);
+    color: var(--text-muted); font-size: 0.9rem; pointer-events: none;
+  }
+  .mp-wrap .form-control,
+  .mp-wrap input[type="text"],
+  .mp-wrap select {
+    background: rgba(255,255,255,0.04) !important;
+    border: 1px solid rgba(168,255,62,0.15) !important;
+    border-radius: 10px !important;
+    color: var(--text-primary) !important;
+    font-family: 'Cabinet Grotesk', sans-serif !important;
+    font-size: 0.92rem !important;
+    padding: 0.8rem 1.1rem !important;
+    width: 100% !important;
+    outline: none !important;
+    transition: all 0.3s cubic-bezier(0.22,1,0.36,1) !important;
+    -webkit-appearance: none !important;
+    appearance: none !important;
+  }
+  .search-input-wrap input { padding-left: 2.8rem !important; }
+  .mp-wrap .form-control:focus,
+  .mp-wrap input:focus,
+  .mp-wrap select:focus {
+    border-color: var(--lime) !important;
+    background: rgba(168,255,62,0.04) !important;
+    box-shadow: 0 0 0 3px rgba(168,255,62,0.1) !important;
+    color: var(--text-primary) !important;
+  }
+  .mp-wrap input::placeholder { color: rgba(106,138,170,0.5) !important; }
+  .mp-wrap select option { background: var(--slate-mid) !important; color: var(--text-primary) !important; }
+
+  /* Type filter chips */
+  .type-chips { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+  .type-chip {
+    display: flex; align-items: center; gap: 0.4rem;
+    padding: 0.55rem 1rem; border-radius: 100px;
+    border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.02);
+    color: var(--text-muted); font-size: 0.82rem; font-weight: 500;
+    cursor: pointer; transition: all 0.25s cubic-bezier(0.22,1,0.36,1); white-space: nowrap;
+    text-decoration: none;
+  }
+  .type-chip:hover, .type-chip.active {
+    border-color: rgba(168,255,62,0.3); background: rgba(168,255,62,0.06);
+    color: var(--lime);
+  }
+
+  .btn-search {
+    background: var(--lime); color: #050c15;
+    font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.88rem;
+    padding: 0.8rem 1.6rem; border-radius: 10px; border: none; cursor: pointer;
+    display: flex; align-items: center; gap: 0.5rem;
+    transition: all 0.3s cubic-bezier(0.22,1,0.36,1); white-space: nowrap;
+    position: relative; overflow: hidden;
+  }
+  .btn-search:hover { transform: translateY(-2px); box-shadow: 0 0 24px rgba(168,255,62,0.4); }
+
+  /* ── RESULTS COUNT ── */
+  .mp-results-meta {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 1.5rem; flex-wrap: wrap; gap: 0.8rem;
+    animation: fadeUp 0.7s cubic-bezier(0.22,1,0.36,1) 0.2s both;
+  }
+  .results-count { font-size: 0.85rem; color: var(--text-muted); }
+  .results-count strong { color: var(--lime); font-family: 'Syne', sans-serif; }
+  .sort-select {
+    background: rgba(255,255,255,0.03) !important;
+    border: 1px solid rgba(255,255,255,0.08) !important;
+    border-radius: 8px !important; color: var(--text-muted) !important;
+    font-size: 0.82rem !important; padding: 0.4rem 0.8rem !important;
+    cursor: pointer !important; outline: none !important;
+    -webkit-appearance: none !important; font-family: 'Cabinet Grotesk', sans-serif !important;
+  }
+
+  /* ── LISTINGS GRID ── */
+  .mp-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
+    gap: 1.5rem;
+  }
+
+  /* ── LISTING CARD ── */
+  .listing-card {
+    background: var(--card-glass);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 18px; overflow: hidden;
+    display: flex; flex-direction: column;
+    transition: all 0.35s cubic-bezier(0.22,1,0.36,1);
+    position: relative;
+    animation: fadeUp 0.6s cubic-bezier(0.22,1,0.36,1) var(--card-delay, 0s) both;
+  }
+  .listing-card::before {
+    content: ''; position: absolute; inset: 0; border-radius: 18px;
+    background: linear-gradient(135deg, rgba(168,255,62,0.04), transparent 60%);
+    opacity: 0; transition: opacity 0.35s;
+  }
+  .listing-card:hover { transform: translateY(-6px); border-color: rgba(168,255,62,0.2); box-shadow: 0 20px 60px rgba(0,0,0,0.4), 0 0 0 1px rgba(168,255,62,0.08), 0 0 40px rgba(168,255,62,0.06); }
+  .listing-card:hover::before { opacity: 1; }
+
+  /* Card accent bar */
+  .card-accent {
+    height: 3px; width: 100%;
+    background: linear-gradient(90deg, var(--lime), var(--cyan));
+    opacity: 0; transition: opacity 0.35s;
+  }
+  .listing-card:hover .card-accent { opacity: 1; }
+
+  /* Card header */
+  .card-top {
+    padding: 1.2rem 1.4rem 0;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .energy-badge {
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    padding: 0.35rem 0.8rem; border-radius: 100px;
+    font-size: 0.75rem; font-weight: 700; letter-spacing: 0.04em;
+    font-family: 'Syne', sans-serif;
+  }
+  .badge-solar   { background: rgba(255,200,50,0.12);  border: 1px solid rgba(255,200,50,0.25);  color: #ffd04a; }
+  .badge-wind    { background: rgba(100,180,255,0.12); border: 1px solid rgba(100,180,255,0.25); color: #64b4ff; }
+  .badge-biogas  { background: rgba(80,220,120,0.12);  border: 1px solid rgba(80,220,120,0.25);  color: #50dc78; }
+  .badge-hydro   { background: rgba(80,180,255,0.12);  border: 1px solid rgba(0,212,255,0.25);   color: var(--cyan); }
+
+  .status-badge {
+    display: inline-flex; align-items: center; gap: 0.35rem;
+    padding: 0.3rem 0.7rem; border-radius: 100px;
+    background: rgba(168,255,62,0.08); border: 1px solid rgba(168,255,62,0.2);
+    color: var(--lime); font-size: 0.72rem; font-weight: 600; font-family: 'Syne', sans-serif;
+  }
+  .status-dot { width: 5px; height: 5px; background: var(--lime); border-radius: 50%; animation: pulse 2s ease infinite; }
+
+  /* Card body */
+  .card-body {
+    padding: 1.2rem 1.4rem; flex: 1; display: flex; flex-direction: column; gap: 0.5rem;
+  }
+  .card-title {
+    font-family: 'Syne', sans-serif; font-size: 1.05rem; font-weight: 700;
+    color: var(--text-primary); margin-bottom: 0.2rem; line-height: 1.3;
+  }
+  .card-meta {
+    display: flex; flex-direction: column; gap: 0.25rem;
+  }
+  .card-meta-item {
+    display: flex; align-items: center; gap: 0.5rem;
+    font-size: 0.82rem; color: var(--text-muted);
+  }
+  .card-meta-icon { font-size: 0.85rem; width: 16px; text-align: center; flex-shrink: 0; }
+
+  .card-divider {
+    height: 1px; background: rgba(255,255,255,0.05); margin: 0.6rem 0;
+  }
+
+  /* Stats row */
+  .card-stats {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem;
+  }
+  .card-stat {
+    background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05);
+    border-radius: 10px; padding: 0.75rem;
+  }
+  .card-stat-label { font-size: 0.68rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.25rem; }
+  .card-stat-value { font-family: 'Syne', sans-serif; font-size: 1rem; font-weight: 700; color: var(--text-primary); }
+  .card-stat-value.price { color: var(--lime); }
+
+  /* Total value pill */
+  .total-value-row {
+    display: flex; align-items: center; justify-content: space-between;
+    background: rgba(168,255,62,0.05); border: 1px solid rgba(168,255,62,0.12);
+    border-radius: 10px; padding: 0.75rem 1rem;
+  }
+  .total-label { font-size: 0.78rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .total-num { font-family: 'Syne', sans-serif; font-size: 1.05rem; font-weight: 800; color: var(--lime); }
+
+  .card-desc { font-size: 0.84rem; color: var(--text-muted); line-height: 1.6; flex: 1; }
+
+  /* Card footer */
+  .card-footer {
+    padding: 1rem 1.4rem 1.4rem;
+  }
+  .btn-view {
+    width: 100%; background: transparent;
+    border: 1px solid rgba(168,255,62,0.25); border-radius: 10px;
+    color: var(--lime); font-family: 'Syne', sans-serif; font-weight: 700;
+    font-size: 0.88rem; padding: 0.85rem; cursor: pointer; text-decoration: none;
+    display: flex; align-items: center; justify-content: center; gap: 0.6rem;
+    transition: all 0.3s cubic-bezier(0.22,1,0.36,1); position: relative; overflow: hidden;
+  }
+  .btn-view::before {
+    content: ''; position: absolute; inset: 0;
+    background: var(--lime); transform: scaleX(0); transform-origin: left;
+    transition: transform 0.35s cubic-bezier(0.22,1,0.36,1);
+  }
+  .btn-view:hover { color: #050c15; border-color: var(--lime); box-shadow: 0 0 20px rgba(168,255,62,0.25); }
+  .btn-view:hover::before { transform: scaleX(1); }
+  .btn-view span { position: relative; z-index: 1; }
+  .btn-view-arrow { transition: transform 0.3s cubic-bezier(0.22,1,0.36,1); position: relative; z-index: 1; }
+  .btn-view:hover .btn-view-arrow { transform: translateX(4px); }
+
+  /* ── EMPTY STATE ── */
+  .mp-empty {
+    grid-column: 1 / -1; text-align: center;
+    padding: 5rem 2rem;
+    animation: fadeUp 0.7s cubic-bezier(0.22,1,0.36,1) both;
+  }
+  .mp-empty-icon { font-size: 3.5rem; margin-bottom: 1rem; opacity: 0.5; }
+  .mp-empty-title { font-family: 'Syne', sans-serif; font-size: 1.3rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem; }
+  .mp-empty-desc { color: var(--text-muted); font-size: 0.92rem; }
+
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
+</style>
+
+<div class="mp-wrap">
+  <div class="noise-overlay"></div>
+  <div class="bg-grid"></div>
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+
+  <div class="cursor-dot" id="cursorDot"></div>
+  <div class="cursor-ring" id="cursorRing"></div>
+
+  <div class="mp-inner">
+
+    <!-- ── HERO HEADER ── -->
+    <div class="mp-hero">
+      <div class="mp-hero-left">
+        <div class="mp-page-tag">
+          <span class="tag-dot"></span>
+          Live Marketplace
+        </div>
+        <h1 class="mp-title">Energy <span>Marketplace</span></h1>
+        <p class="mp-subtitle">Browse and trade verified renewable energy listings</p>
+      </div>
+      <div class="mp-hero-stats">
+        <div class="hero-stat">
+          <div class="hero-stat-num">{{ listings|length }}+</div>
+          <div class="hero-stat-label">Active Listings</div>
+        </div>
+        <div class="hero-stat">
+          <div class="hero-stat-num">4</div>
+          <div class="hero-stat-label">Energy Types</div>
+        </div>
+        <div class="hero-stat">
+          <div class="hero-stat-num">Live</div>
+          <div class="hero-stat-label">Market Status</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SEARCH & FILTER BAR ── -->
+    <div class="mp-search-bar">
+      <form method="get" style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;width:100%">
+
+        <div class="search-input-wrap">
+          <span class="search-icon">🔍</span>
+          <input type="text" name="search" placeholder="Search by title, location…" value="{{ search_query }}">
+        </div>
+
+        <div class="type-chips">
+          <a href="?energy_type=&search={{ search_query }}" class="type-chip {% if not energy_type %}active{% endif %}">All</a>
+          <a href="?energy_type=solar&search={{ search_query }}" class="type-chip {% if energy_type == 'solar' %}active{% endif %}">☀️ Solar</a>
+          <a href="?energy_type=wind&search={{ search_query }}" class="type-chip {% if energy_type == 'wind' %}active{% endif %}">💨 Wind</a>
+          <a href="?energy_type=biogas&search={{ search_query }}" class="type-chip {% if energy_type == 'biogas' %}active{% endif %}">🌿 Biogas</a>
+          <a href="?energy_type=hydro&search={{ search_query }}" class="type-chip {% if energy_type == 'hydro' %}active{% endif %}">💧 Hydro</a>
+        </div>
+
+        <button type="submit" class="btn-search">
+          <span>Search</span>
+          <span>→</span>
+        </button>
+
+      </form>
+    </div>
+
+    <!-- ── RESULTS META ── -->
+    <div class="mp-results-meta">
+      <div class="results-count">
+        Showing <strong>{{ listings|length }}</strong> listing{{ listings|length|pluralize }}
+        {% if energy_type %} · <span style="color:var(--lime)">{{ energy_type|capfirst }}</span>{% endif %}
+        {% if search_query %} · "<span style="color:var(--text-primary)">{{ search_query }}</span>"{% endif %}
+      </div>
+    </div>
+
+    <!-- ── LISTINGS GRID ── -->
+    <div class="mp-grid">
+      {% for listing in listings %}
+      <div class="listing-card" style="--card-delay: {{ forloop.counter0 }}00ms">
+        <div class="card-accent"></div>
+
+        <div class="card-top">
+          <span class="energy-badge badge-{{ listing.energy_type }}">
+            {% if listing.energy_type == 'solar' %}☀️ Solar
+            {% elif listing.energy_type == 'wind' %}💨 Wind
+            {% elif listing.energy_type == 'biogas' %}🌿 Biogas
+            {% elif listing.energy_type == 'hydro' %}💧 Hydro
+            {% endif %}
+          </span>
+          <span class="status-badge">
+            <span class="status-dot"></span>
+            {{ listing.get_status_display }}
+          </span>
+        </div>
+
+        <div class="card-body">
+          <h3 class="card-title">{{ listing.title }}</h3>
+
+          <div class="card-meta">
+            <div class="card-meta-item">
+              <span class="card-meta-icon">👤</span>
+              <span>{{ listing.producer.username }}</span>
+            </div>
+            <div class="card-meta-item">
+              <span class="card-meta-icon">📍</span>
+              <span>{{ listing.location }}</span>
+            </div>
+          </div>
+
+          <div class="card-divider"></div>
+
+          <div class="card-stats">
+            <div class="card-stat">
+              <div class="card-stat-label">Quantity</div>
+              <div class="card-stat-value">{{ listing.quantity_kwh }} <span style="font-size:0.7rem;color:var(--text-muted);font-family:'Cabinet Grotesk',sans-serif;font-weight:400">kWh</span></div>
+            </div>
+            <div class="card-stat">
+              <div class="card-stat-label">Price / kWh</div>
+              <div class="card-stat-value price">₹{{ listing.price_per_kwh }}</div>
+            </div>
+          </div>
+
+          <div class="total-value-row">
+            <span class="total-label">Total Value</span>
+            <span class="total-num">₹{{ listing.total_value }}</span>
+          </div>
+
+          <p class="card-desc">{{ listing.description|truncatewords:15 }}</p>
+        </div>
+
+        <div class="card-footer">
+          <a href="{% url 'marketplace:listing_detail' listing.pk %}" class="btn-view">
+            <span>View Details</span>
+            <span class="btn-view-arrow">→</span>
+          </a>
+        </div>
+      </div>
+
+      {% empty %}
+      <div class="mp-empty">
+        <div class="mp-empty-icon">⚡</div>
+        <div class="mp-empty-title">No listings found</div>
+        <p class="mp-empty-desc">Try adjusting your search filters or check back later.</p>
+      </div>
+      {% endfor %}
+    </div>
+
+  </div>
+</div>
+
+<script>
+(function(){
+  const dot = document.getElementById('cursorDot');
+  const ring = document.getElementById('cursorRing');
+  let mx=0,my=0,rx=0,ry=0;
+  document.addEventListener('mousemove', e => {
+    mx=e.clientX; my=e.clientY;
+    dot.style.left=mx+'px'; dot.style.top=my+'px';
+  });
+  function lerp(a,b,t){return a+(b-a)*t;}
+  (function animCursor(){
+    rx=lerp(rx,mx,0.12); ry=lerp(ry,my,0.12);
+    ring.style.left=rx+'px'; ring.style.top=ry+'px';
+    requestAnimationFrame(animCursor);
+  })();
+  document.querySelectorAll('a,button,input,.listing-card,.type-chip').forEach(el=>{
+    el.addEventListener('mouseenter',()=>ring.classList.add('hover'));
+    el.addEventListener('mouseleave',()=>ring.classList.remove('hover'));
+  });
+})();
+</script>
+
+{% endblock %}

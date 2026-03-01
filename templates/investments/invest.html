@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+
+{% block title %}Invest in {{ project.title }} - GreenEnergy{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h3><i class="fas fa-hand-holding-usd"></i> Invest in Project</h3>
+                </div>
+                
+                <div class="card-body">
+                    <h5>{{ project.title }}</h5>
+                    <p class="text-muted">{{ project.get_energy_type_display }} · {{ project.location }}</p>
+                    
+                    <hr>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <p><strong>Total Required:</strong> ₹{{ project.total_funding_required|floatformat:0 }}</p>
+                            <p><strong>Already Raised:</strong> ₹{{ project.funding_raised|floatformat:0 }}</p>
+                            <p><strong>Expected ROI:</strong> {{ project.expected_roi_percent }}%</p>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="alert alert-success">
+                                <p class="mb-1"><strong>Remaining Amount Needed:</strong></p>
+                                <h4 class="mb-0">₹{{ project.total_funding_required|floatformat:0 }}</h4>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="amount" class="form-label">Investment Amount (₹)</label>
+                            <input type="number" class="form-control" id="amount" name="amount" 
+                                   min="1000" step="100" required>
+                            <small class="text-muted">Minimum investment: ₹1,000</small>
+                        </div>
+                        
+                        <div class="alert alert-info">
+                            <h6>Investment Summary</h6>
+                            <p class="mb-1">Your Investment: ₹<span id="investAmount">0</span></p>
+                            <p class="mb-0">Expected Return: ₹<span id="expectedReturn">0</span></p>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-success w-100 btn-lg">
+                            <i class="fas fa-check"></i> Confirm Investment
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const roiPercent = {{ project.expected_roi_percent }};
+    const amountInput = document.getElementById('amount');
+    const investAmountSpan = document.getElementById('investAmount');
+    const expectedReturnSpan = document.getElementById('expectedReturn');
+    
+    amountInput.addEventListener('input', function() {
+        const amount = parseFloat(this.value) || 0;
+        const expectedReturn = amount * (1 + roiPercent / 100);
+        
+        investAmountSpan.textContent = amount.toFixed(2);
+        expectedReturnSpan.textContent = expectedReturn.toFixed(2);
+    });
+</script>
+{% endblock %}

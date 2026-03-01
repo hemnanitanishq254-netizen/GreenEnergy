@@ -1,0 +1,156 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ project.title }} - GreenEnergy{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h4>{{ project.title }}</h4>
+                    <span class="badge badge-{{ project.energy_type }} fs-6">
+                        {{ project.get_energy_type_display }}
+                    </span>
+                </div>
+                
+                <div class="card-body">
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <p class="mb-2">
+                                <i class="fas fa-map-marker-alt text-danger"></i> 
+                                <strong>Location:</strong> {{ project.location }}
+                            </p>
+                            <p class="mb-2">
+                                <i class="fas fa-bolt text-warning"></i> 
+                                <strong>Capacity:</strong> {{ project.capacity_kw }} kW
+                            </p>
+                            <p class="mb-2">
+                                <i class="fas fa-calendar text-success"></i> 
+                                <strong>Duration:</strong> {{ project.project_duration_months }} months
+                            </p>
+                            <p class="mb-2">
+                                <i class="fas fa-calendar-check text-info"></i> 
+                                <strong>Completion:</strong> {{ project.expected_completion }}
+                            </p>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="card bg-light">
+                                <div class="card-body text-center">
+                                    <h6 class="text-muted">Expected ROI</h6>
+                                    <h2 class="text-success">{{ project.expected_roi_percent }}%</h2>
+                                    
+                                    <hr>
+                                    
+                                    <h6 class="text-muted">Project Status</h6>
+                                    <h4><span class="badge bg-{{ project.status }}">{{ project.get_status_display }}</span></h4>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <h5><i class="fas fa-chart-bar"></i> Funding Progress</h5>
+                    <div class="mb-4">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>₹{{ project.funding_raised|floatformat:0 }} raised</span>
+                            <span><strong>{{ project.funding_progress|floatformat:1 }}%</strong></span>
+                            <span>₹{{ project.total_funding_required|floatformat:0 }} goal</span>
+                        </div>
+                        <div class="progress" style="height: 30px;">
+                            <div class="progress-bar bg-success" role="progressbar" 
+                                 style="width: {{ project.funding_progress }}%">
+                                {{ project.funding_progress|floatformat:1 }}%
+                            </div>
+                        </div>
+                        <p class="text-muted mt-2">
+                            <i class="fas fa-users"></i> {{ total_investors }} investors
+                        </p>
+                    </div>
+                    
+                    <hr>
+                    
+                    <h5><i class="fas fa-info-circle"></i> Project Description</h5>
+                    <p>{{ project.description }}</p>
+                    
+                    <hr>
+                    
+                    {% if investments %}
+                    <h5><i class="fas fa-users"></i> Recent Investors</h5>
+                    <div class="list-group">
+                        {% for investment in investments %}
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong>{{ investment.investor.username }}</strong>
+                                    <small class="text-muted d-block">{{ investment.created_at|date:"M d, Y" }}</small>
+                                </div>
+                                <span class="badge bg-success">₹{{ investment.amount|floatformat:0 }}</span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card sticky-top" style="top: 20px;">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="fas fa-hand-holding-usd"></i> Invest Now</h5>
+                </div>
+                
+                <div class="card-body">
+                    {% if user.is_authenticated %}
+                        {% if user.role == 'investor' %}
+                            {% if project.status == 'funding' %}
+                                <p class="text-muted">Be part of the green revolution!</p>
+                                
+                                <div class="alert alert-info">
+                                    <small>
+                                        <i class="fas fa-info-circle"></i> 
+                                        Remaining: <strong>₹{{ project.total_funding_required|add:project.funding_raised|floatformat:0 }}</strong>
+                                    </small>
+                                </div>
+                                
+                                <a href="{% url 'investments:invest' project.pk %}" class="btn btn-success w-100 btn-lg">
+                                    <i class="fas fa-money-bill-wave"></i> Invest Now
+                                </a>
+                            {% else %}
+                                <div class="alert alert-warning">
+                                    <i class="fas fa-exclamation-triangle"></i> This project is not accepting investments
+                                </div>
+                            {% endif %}
+                        {% else %}
+                            <div class="alert alert-warning">
+                                <i class="fas fa-user-times"></i> Only investors can invest in projects
+                            </div>
+                        {% endif %}
+                    {% else %}
+                        <div class="alert alert-warning">
+                            <i class="fas fa-sign-in-alt"></i> Please login to invest
+                        </div>
+                        
+                        <a href="{% url 'accounts:login' %}" class="btn btn-primary w-100 mb-2">
+                            <i class="fas fa-sign-in-alt"></i> Login
+                        </a>
+                        
+                        <a href="{% url 'accounts:register' %}" class="btn btn-success w-100">
+                            <i class="fas fa-user-plus"></i> Register
+                        </a>
+                    {% endif %}
+                </div>
+                
+                <div class="card-footer bg-transparent">
+                    <small class="text-muted">
+                        <i class="fas fa-shield-alt"></i> Secure investment · Verified projects
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

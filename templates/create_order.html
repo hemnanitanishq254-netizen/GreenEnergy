@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+
+{% block title %}Purchase Energy - GreenEnergy{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h3><i class="fas fa-shopping-cart"></i> Purchase Energy</h3>
+                </div>
+                
+                <div class="card-body">
+                    <h5>{{ listing.title }}</h5>
+                    <p class="text-muted">Producer: {{ listing.producer.get_full_name|default:listing.producer.username }}</p>
+                    
+                    <hr>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <p><strong>Available Quantity:</strong> {{ listing.quantity_kwh }} kWh</p>
+                            <p><strong>Price per kWh:</strong> ₹{{ listing.price_per_kwh }}</p>
+                            <p><strong>Location:</strong> {{ listing.location }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="alert alert-info">
+                                <p class="mb-1"><strong>Energy Type:</strong> {{ listing.get_energy_type_display }}</p>
+                                <p class="mb-0"><strong>Available Until:</strong> {{ listing.available_until }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <form method="post" id="orderForm">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="quantity_kwh" class="form-label">Quantity to Purchase (kWh)</label>
+                            <input type="number" class="form-control" id="quantity_kwh" name="quantity_kwh" 
+                                   min="1" max="{{ listing.quantity_kwh }}" step="0.01" required>
+                            <small class="text-muted">Maximum: {{ listing.quantity_kwh }} kWh</small>
+                        </div>
+                        
+                        <div class="alert alert-success">
+                            <h5>Estimated Cost</h5>
+                            <p class="mb-0">Total: ₹<span id="totalCost">0.00</span></p>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary w-100 btn-lg">
+                            <i class="fas fa-arrow-right"></i> Proceed to Payment
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const pricePerKwh = {{ listing.price_per_kwh }};
+    const quantityInput = document.getElementById('quantity_kwh');
+    const totalCostSpan = document.getElementById('totalCost');
+    
+    quantityInput.addEventListener('input', function() {
+        const quantity = parseFloat(this.value) || 0;
+        const total = quantity * pricePerKwh;
+        totalCostSpan.textContent = total.toFixed(2);
+    });
+</script>
+{% endblock %}

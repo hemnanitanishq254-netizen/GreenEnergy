@@ -1,0 +1,269 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - GreenEnergy{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-tachometer-alt"></i> Welcome, {{ user.first_name|default:user.username }}!</h2>
+                <span class="badge bg-success fs-6">{{ user.get_role_display }}</span>
+            </div>
+        </div>
+    </div>
+    
+    {% if user.role == 'producer' %}
+        <!-- Producer Dashboard -->
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="card text-center p-4 bg-primary text-white">
+                    <h3>{{ listings.count }}</h3>
+                    <p>Active Listings</p>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="card text-center p-4 bg-success text-white">
+                    <h3>{{ profile.capacity_kw }} kW</h3>
+                    <p>Total Capacity</p>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="card text-center p-4 bg-info text-white">
+                    <h3>{{ profile.get_energy_type_display }}</h3>
+                    <p>Energy Type</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row mt-4">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5><i class="fas fa-list"></i> My Listings</h5>
+                        <a href="{% url 'marketplace:create_listing' %}" class="btn btn-success btn-sm">
+                            <i class="fas fa-plus"></i> Create New
+                        </a>
+                    </div>
+                    <div class="card-body">
+                        {% if listings %}
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Title</th>
+                                            <th>Quantity (kWh)</th>
+                                            <th>Price/kWh</th>
+                                            <th>Status</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for listing in listings %}
+                                        <tr>
+                                            <td>{{ listing.title }}</td>
+                                            <td>{{ listing.quantity_kwh }}</td>
+                                            <td>₹{{ listing.price_per_kwh }}</td>
+                                            <td><span class="badge bg-success">{{ listing.get_status_display }}</span></td>
+                                            <td>
+                                                <a href="{% url 'marketplace:listing_detail' listing.pk %}" class="btn btn-sm btn-info">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% else %}
+                            <p class="text-center text-muted">No listings yet. Create your first listing!</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+    {% elif user.role == 'consumer' %}
+        <!-- Consumer Dashboard -->
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="card text-center p-4 bg-primary text-white">
+                    <h3>{{ orders.count }}</h3>
+                    <p>Total Orders</p>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="card text-center p-4 bg-success text-white">
+                    <h3>{{ profile.monthly_consumption_kwh }} kWh</h3>
+                    <p>Monthly Consumption</p>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="card text-center p-4 bg-info text-white">
+                    <h3>₹{{ profile.budget_per_month|default:"0" }}</h3>
+                    <p>Monthly Budget</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row mt-4">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-shopping-cart"></i> Recent Orders</h5>
+                    </div>
+                    <div class="card-body">
+                        {% if orders %}
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Order ID</th>
+                                            <th>Energy Source</th>
+                                            <th>Quantity</th>
+                                            <th>Amount</th>
+                                            <th>Status</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for order in orders %}
+                                        <tr>
+                                            <td>#{{ order.id }}</td>
+                                            <td>{{ order.listing.title }}</td>
+                                            <td>{{ order.quantity_kwh }} kWh</td>
+                                            <td>₹{{ order.total_amount }}</td>
+                                            <td><span class="badge bg-success">{{ order.get_status_display }}</span></td>
+                                            <td>
+                                                <a href="{% url 'transactions:order_detail' order.id %}" class="btn btn-sm btn-info">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% else %}
+                            <p class="text-center text-muted">No orders yet. Start shopping for green energy!</p>
+                            <div class="text-center">
+                                <a href="{% url 'marketplace:listing_list' %}" class="btn btn-primary">
+                                    <i class="fas fa-bolt"></i> Browse Energy
+                                </a>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+    {% elif user.role == 'investor' %}
+        <!-- Investor Dashboard -->
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="card text-center p-4 bg-primary text-white">
+                    <h3>{{ investments.count }}</h3>
+                    <p>Active Investments</p>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="card text-center p-4 bg-success text-white">
+                    <h3>₹{{ profile.investment_capacity }}</h3>
+                    <p>Investment Capacity</p>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="card text-center p-4 bg-info text-white">
+                    <h3>{{ profile.preferred_sectors|slice:":10" }}...</h3>
+                    <p>Preferred Sectors</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-chart-pie"></i> Investment Overview</h5>
+                    </div>
+                    <div class="card-body">
+                        <p>Total Invested: <strong>₹0</strong></p>
+                        <p>Expected Returns: <strong>₹0</strong></p>
+                        <p>ROI: <strong>0%</strong></p>
+                        <div class="mt-3">
+                            <a href="{% url 'investments:my_investments' %}" class="btn btn-primary">
+                                <i class="fas fa-chart-line"></i> View All Investments
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-lightbulb"></i> Quick Actions</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-grid gap-2">
+                            <a href="{% url 'investments:projects_list' %}" class="btn btn-success">
+                                <i class="fas fa-search"></i> Browse Projects
+                            </a>
+                            <a href="{% url 'investments:my_investments' %}" class="btn btn-info text-white">
+                                <i class="fas fa-wallet"></i> My Portfolio
+                            </a>
+                            <a href="{% url 'transactions:transaction_history' %}" class="btn btn-secondary">
+                                <i class="fas fa-history"></i> Transaction History
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+    
+    <!-- Quick Actions -->
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-bolt"></i> Quick Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <a href="{% url 'marketplace:listing_list' %}" class="btn btn-outline-primary w-100">
+                                <i class="fas fa-list"></i><br>Browse Marketplace
+                            </a>
+                        </div>
+                        
+                        <div class="col-md-3">
+                            <a href="{% url 'transactions:transaction_history' %}" class="btn btn-outline-success w-100">
+                                <i class="fas fa-history"></i><br>View Transactions
+                            </a>
+                        </div>
+                        
+                        <div class="col-md-3">
+                            <a href="{% url 'investments:projects_list' %}" class="btn btn-outline-info w-100">
+                                <i class="fas fa-project-diagram"></i><br>Investment Projects
+                            </a>
+                        </div>
+                        
+                        <div class="col-md-3">
+                            <a href="{% url 'accounts:complete_profile' %}" class="btn btn-outline-warning w-100">
+                                <i class="fas fa-user-edit"></i><br>Edit Profile
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }} - GreenEnergy{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <h2><i class="fas fa-shopping-cart"></i> {{ title }}</h2>
+        </div>
+    </div>
+    
+    {% if orders %}
+        <div class="row g-4">
+            {% for order in orders %}
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col-md-2">
+                                <h5 class="mb-0">Order #{{ order.id }}</h5>
+                                <small class="text-muted">{{ order.created_at|date:"M d, Y" }}</small>
+                            </div>
+                            
+                            <div class="col-md-3">
+                                <p class="mb-1"><strong>{{ order.listing.title }}</strong></p>
+                                <p class="text-muted mb-0">
+                                    {% if user.role == 'consumer' %}
+                                        Producer: {{ order.listing.producer.username }}
+                                    {% else %}
+                                        Consumer: {{ order.consumer.username }}
+                                    {% endif %}
+                                </p>
+                            </div>
+                            
+                            <div class="col-md-2">
+                                <p class="mb-0"><strong>{{ order.quantity_kwh }} kWh</strong></p>
+                                <small class="text-muted">Quantity</small>
+                            </div>
+                            
+                            <div class="col-md-2">
+                                <p class="mb-0 text-success"><strong>₹{{ order.total_amount }}</strong></p>
+                                <small class="text-muted">Total</small>
+                            </div>
+                            
+                            <div class="col-md-2">
+                                <span class="badge bg-{{ order.status }} fs-6">{{ order.get_status_display }}</span>
+                            </div>
+                            
+                            <div class="col-md-1">
+                                <a href="{% url 'transactions:order_detail' order.id %}" class="btn btn-sm btn-primary">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="alert alert-info text-center">
+            <h5><i class="fas fa-inbox"></i> No Orders Yet</h5>
+            <p>
+                {% if user.role == 'consumer' %}
+                    Start browsing the marketplace to buy green energy!
+                    <br><br>
+                    <a href="{% url 'marketplace:listing_list' %}" class="btn btn-primary">
+                        <i class="fas fa-bolt"></i> Browse Energy
+                    </a>
+                {% else %}
+                    Your sales will appear here once consumers purchase your energy!
+                {% endif %}
+            </p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

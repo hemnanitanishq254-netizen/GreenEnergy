@@ -1,0 +1,560 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Register - GreenEnergy{% endblock %}
+
+{% block content %}
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Cabinet+Grotesk:wght@300;400;500;700;800&display=swap');
+
+  :root {
+    --lime: #a8ff3e;
+    --lime-dim: #7acc1f;
+    --lime-pale: rgba(168,255,62,0.08);
+    --navy: #050c15;
+    --slate: #0a1525;
+    --slate-mid: #0e1f33;
+    --card-glass: rgba(255,255,255,0.03);
+    --border-glass: rgba(168,255,62,0.12);
+    --text-primary: #eef4ff;
+    --text-muted: #6a8aaa;
+    --cyan: #00d4ff;
+    --glow-lime: 0 0 40px rgba(168,255,62,0.35);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  .reg-wrap {
+    font-family: 'Cabinet Grotesk', 'DM Sans', sans-serif;
+    background: var(--navy);
+    color: var(--text-primary);
+    min-height: 100vh;
+    overflow-x: hidden;
+    position: relative;
+  }
+
+  /* ── NOISE OVERLAY ── */
+  .noise-overlay {
+    position: fixed; inset: 0; z-index: 0; pointer-events: none; opacity: 0.035;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-size: 256px;
+  }
+
+  /* ── BACKGROUND GRID ── */
+  .bg-grid {
+    position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background-image:
+      linear-gradient(rgba(168,255,62,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(168,255,62,0.04) 1px, transparent 1px);
+    background-size: 64px 64px;
+    mask-image: radial-gradient(ellipse 70% 70% at 50% 50%, black 10%, transparent 100%);
+  }
+
+  /* ── ORBS ── */
+  .orb { position: fixed; border-radius: 50%; filter: blur(100px); pointer-events: none; z-index: 0; }
+  .orb-1 { width: 500px; height: 500px; background: radial-gradient(circle, rgba(168,255,62,0.12) 0%, transparent 70%); top: -150px; left: -150px; animation: floatOrb1 12s ease-in-out infinite; }
+  .orb-2 { width: 400px; height: 400px; background: radial-gradient(circle, rgba(0,212,255,0.08) 0%, transparent 70%); bottom: -100px; right: -100px; animation: floatOrb2 14s ease-in-out infinite; }
+  @keyframes floatOrb1 { 0%,100% { transform: translate(0,0); } 50% { transform: translate(30px,-40px); } }
+  @keyframes floatOrb2 { 0%,100% { transform: translate(0,0); } 50% { transform: translate(-25px,35px); } }
+
+  /* ── CURSOR ── */
+  .cursor-dot {
+    width: 8px; height: 8px; background: var(--lime); border-radius: 50%;
+    position: fixed; pointer-events: none; z-index: 9999; transform: translate(-50%,-50%);
+  }
+  .cursor-ring {
+    width: 36px; height: 36px; border: 1.5px solid rgba(168,255,62,0.5);
+    border-radius: 50%; position: fixed; pointer-events: none;
+    z-index: 9998; transform: translate(-50%,-50%);
+    transition: transform 0.18s ease, width 0.25s, height 0.25s, border-color 0.25s;
+  }
+  .cursor-ring.hover { width: 55px; height: 55px; border-color: var(--lime); }
+
+  /* ── PAGE LAYOUT ── */
+  .reg-page {
+    position: relative; z-index: 1;
+    min-height: 100vh;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    align-items: stretch;
+  }
+  @media (max-width: 900px) { .reg-page { grid-template-columns: 1fr; } .reg-left { display: none !important; } }
+
+  /* ── LEFT PANEL ── */
+  .reg-left {
+    background: linear-gradient(160deg, rgba(168,255,62,0.06) 0%, transparent 50%);
+    border-right: 1px solid var(--border-glass);
+    display: flex; flex-direction: column; justify-content: space-between;
+    padding: 3rem; position: relative; overflow: hidden;
+  }
+
+  .reg-left-brand {
+    display: flex; align-items: center; gap: 0.8rem;
+  }
+  .brand-logo {
+    width: 44px; height: 44px; border-radius: 50%;
+    border: 1.5px solid var(--lime); object-fit: cover;
+    box-shadow: var(--glow-lime);
+  }
+  .brand-name {
+    font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.1rem;
+    color: var(--text-primary);
+  }
+  .brand-name span { color: var(--lime); }
+
+  .reg-left-main { flex: 1; display: flex; flex-direction: column; justify-content: center; }
+
+  .reg-left-tag {
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    background: rgba(168,255,62,0.08); border: 1px solid rgba(168,255,62,0.2);
+    border-radius: 100px; padding: 0.35rem 0.9rem; margin-bottom: 1.5rem;
+    font-size: 0.7rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--lime);
+    font-family: 'Syne', sans-serif; font-weight: 600; width: fit-content;
+  }
+  .tag-dot { width: 5px; height: 5px; background: var(--lime); border-radius: 50%; animation: pulse 2s ease infinite; box-shadow: 0 0 6px var(--lime); }
+  @keyframes pulse { 0%,100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.5); opacity: 0.5; } }
+
+  .reg-left-title {
+    font-family: 'Syne', sans-serif; font-size: clamp(2rem, 3.5vw, 3rem);
+    font-weight: 800; line-height: 1.1; color: var(--text-primary);
+    margin-bottom: 1.2rem; letter-spacing: -0.02em;
+  }
+  .reg-left-title span { color: var(--lime); text-shadow: 0 0 40px rgba(168,255,62,0.4); }
+
+  .reg-left-desc { color: var(--text-muted); font-size: 0.95rem; line-height: 1.8; max-width: 340px; margin-bottom: 3rem; }
+
+  /* Feature pills */
+  .feature-list { display: flex; flex-direction: column; gap: 0.9rem; }
+  .feature-item {
+    display: flex; align-items: center; gap: 1rem;
+    background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 12px; padding: 0.9rem 1.1rem;
+    transition: all 0.3s cubic-bezier(0.22,1,0.36,1);
+    animation: fadeUp 0.7s cubic-bezier(0.22,1,0.36,1) var(--fi-delay, 0s) both;
+  }
+  .feature-item:hover { border-color: rgba(168,255,62,0.2); background: rgba(168,255,62,0.04); transform: translateX(6px); }
+  .feature-icon {
+    width: 36px; height: 36px; border-radius: 9px;
+    background: rgba(168,255,62,0.1); border: 1px solid rgba(168,255,62,0.2);
+    display: flex; align-items: center; justify-content: center; font-size: 1rem; flex-shrink: 0;
+  }
+  .feature-text { font-size: 0.87rem; color: var(--text-muted); }
+  .feature-text strong { display: block; color: var(--text-primary); font-weight: 600; font-size: 0.9rem; margin-bottom: 0.1rem; }
+
+  /* Stats row */
+  .reg-stats { display: flex; gap: 0; border: 1px solid var(--border-glass); border-radius: 14px; overflow: hidden; background: var(--card-glass); backdrop-filter: blur(20px); }
+  .reg-stat { flex: 1; padding: 1.2rem; text-align: center; border-right: 1px solid var(--border-glass); }
+  .reg-stat:last-child { border-right: none; }
+  .reg-stat-num { font-family: 'Syne', sans-serif; font-size: 1.3rem; font-weight: 800; color: var(--lime); }
+  .reg-stat-label { font-size: 0.68rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-top: 0.15rem; }
+
+  /* Decorative line art */
+  .deco-lines {
+    position: absolute; bottom: 0; right: 0; width: 220px; opacity: 0.06; pointer-events: none;
+  }
+
+  /* ── RIGHT PANEL (FORM) ── */
+  .reg-right {
+    display: flex; flex-direction: column; justify-content: center;
+    padding: 3rem 4rem;
+    position: relative;
+  }
+  @media (max-width: 1200px) { .reg-right { padding: 3rem 2.5rem; } }
+  @media (max-width: 600px) { .reg-right { padding: 2rem 1.5rem; } }
+
+  .reg-right-top {
+    margin-bottom: 2.5rem;
+    animation: fadeUp 0.8s cubic-bezier(0.22,1,0.36,1) 0.1s both;
+  }
+  .reg-step-label {
+    font-size: 0.7rem; letter-spacing: 0.25em; text-transform: uppercase;
+    color: var(--lime); font-weight: 600; font-family: 'Syne', sans-serif;
+    margin-bottom: 0.7rem; display: flex; align-items: center; gap: 0.6rem;
+  }
+  .reg-step-label::before { content: ''; display: block; width: 24px; height: 1px; background: var(--lime); opacity: 0.6; }
+  .reg-title { font-family: 'Syne', sans-serif; font-size: clamp(1.6rem, 2.5vw, 2.2rem); font-weight: 800; color: var(--text-primary); margin-bottom: 0.4rem; letter-spacing: -0.02em; }
+  .reg-title span { color: var(--lime); }
+  .reg-subtitle { color: var(--text-muted); font-size: 0.9rem; }
+
+  /* ── FORM STYLES ── */
+  .reg-form {
+    animation: fadeUp 0.8s cubic-bezier(0.22,1,0.36,1) 0.25s both;
+  }
+
+  /* Override Django crispy / Bootstrap form styles */
+  .reg-wrap .form-group,
+  .reg-wrap .mb-3 {
+    margin-bottom: 1.4rem !important;
+  }
+
+  .reg-wrap label {
+    display: block !important;
+    font-size: 0.78rem !important;
+    font-weight: 600 !important;
+    color: var(--text-muted) !important;
+    letter-spacing: 0.06em !important;
+    text-transform: uppercase !important;
+    margin-bottom: 0.5rem !important;
+    font-family: 'Syne', sans-serif !important;
+  }
+
+  .reg-wrap .form-control,
+  .reg-wrap input[type="text"],
+  .reg-wrap input[type="email"],
+  .reg-wrap input[type="password"],
+  .reg-wrap input[type="number"],
+  .reg-wrap input[type="tel"],
+  .reg-wrap select,
+  .reg-wrap textarea {
+    background: rgba(255,255,255,0.03) !important;
+    border: 1px solid rgba(168,255,62,0.15) !important;
+    border-radius: 10px !important;
+    color: var(--text-primary) !important;
+    font-family: 'Cabinet Grotesk', sans-serif !important;
+    font-size: 0.93rem !important;
+    padding: 0.85rem 1.1rem !important;
+    width: 100% !important;
+    transition: all 0.3s cubic-bezier(0.22,1,0.36,1) !important;
+    outline: none !important;
+    box-shadow: none !important;
+    -webkit-appearance: none !important;
+    appearance: none !important;
+  }
+
+  .reg-wrap .form-control:focus,
+  .reg-wrap input:focus,
+  .reg-wrap select:focus,
+  .reg-wrap textarea:focus {
+    border-color: var(--lime) !important;
+    background: rgba(168,255,62,0.04) !important;
+    box-shadow: 0 0 0 3px rgba(168,255,62,0.1), 0 0 20px rgba(168,255,62,0.08) !important;
+    color: var(--text-primary) !important;
+  }
+
+  .reg-wrap .form-control::placeholder,
+  .reg-wrap input::placeholder { color: rgba(106,138,170,0.5) !important; }
+
+  .reg-wrap select option {
+    background: var(--slate-mid) !important;
+    color: var(--text-primary) !important;
+  }
+
+  /* Checkbox / radio */
+  .reg-wrap .form-check { display: flex; align-items: flex-start; gap: 0.6rem; margin-bottom: 0.5rem; }
+  .reg-wrap .form-check-input {
+    width: 16px !important; height: 16px !important;
+    border-radius: 4px !important;
+    background: transparent !important;
+    border: 1px solid rgba(168,255,62,0.3) !important;
+    accent-color: var(--lime) !important;
+    flex-shrink: 0 !important; margin-top: 2px !important;
+    cursor: pointer !important;
+  }
+  .reg-wrap .form-check-label { font-size: 0.85rem !important; color: var(--text-muted) !important; text-transform: none !important; letter-spacing: 0 !important; font-family: 'Cabinet Grotesk', sans-serif !important; cursor: pointer !important; }
+
+  /* Error states */
+  .reg-wrap .errorlist,
+  .reg-wrap .invalid-feedback {
+    list-style: none !important;
+    padding: 0 !important;
+    font-size: 0.78rem !important;
+    color: #ff6b6b !important;
+    margin-top: 0.35rem !important;
+  }
+  .reg-wrap .is-invalid { border-color: rgba(255,107,107,0.5) !important; }
+  .reg-wrap .form-control.is-invalid:focus { box-shadow: 0 0 0 3px rgba(255,107,107,0.15) !important; }
+
+  /* Help text */
+  .reg-wrap .form-text,
+  .reg-wrap small.text-muted {
+    font-size: 0.75rem !important;
+    color: rgba(106,138,170,0.7) !important;
+    margin-top: 0.3rem !important;
+    display: block !important;
+  }
+
+  /* Field row: 2 cols */
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  @media (max-width: 500px) { .field-row { grid-template-columns: 1fr; } }
+
+  /* ── SUBMIT BUTTON ── */
+  .btn-reg {
+    width: 100%; background: var(--lime); color: #050c15;
+    font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.95rem;
+    letter-spacing: 0.04em; padding: 1rem 2rem; border-radius: 10px;
+    border: none; cursor: pointer; margin-top: 0.5rem;
+    transition: all 0.3s cubic-bezier(0.22,1,0.36,1);
+    display: flex; align-items: center; justify-content: center; gap: 0.6rem;
+    position: relative; overflow: hidden;
+    box-shadow: 0 0 0 0 rgba(168,255,62,0);
+  }
+  .btn-reg::before {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(135deg, #c5ff6a, var(--lime));
+    opacity: 0; transition: opacity 0.3s;
+  }
+  .btn-reg:hover { transform: translateY(-3px); box-shadow: 0 0 30px rgba(168,255,62,0.45), 0 8px 25px rgba(0,0,0,0.3); }
+  .btn-reg:hover::before { opacity: 1; }
+  .btn-reg:active { transform: translateY(0); }
+  .btn-reg span { position: relative; z-index: 1; }
+  .btn-reg .btn-arrow { transition: transform 0.3s cubic-bezier(0.22,1,0.36,1); position: relative; z-index: 1; }
+  .btn-reg:hover .btn-arrow { transform: translateX(4px); }
+
+  /* ── DIVIDER ── */
+  .or-divider {
+    display: flex; align-items: center; gap: 1rem; margin: 1.5rem 0;
+  }
+  .or-divider::before, .or-divider::after {
+    content: ''; flex: 1; height: 1px; background: rgba(255,255,255,0.07);
+  }
+  .or-divider span { font-size: 0.75rem; color: var(--text-muted); white-space: nowrap; }
+
+  /* ── LOGIN LINK ── */
+  .login-link-bar {
+    text-align: center; margin-top: 1.8rem;
+    font-size: 0.88rem; color: var(--text-muted);
+    animation: fadeUp 0.8s cubic-bezier(0.22,1,0.36,1) 0.4s both;
+  }
+  .login-link-bar a { color: var(--lime); text-decoration: none; font-weight: 600; transition: opacity 0.2s; }
+  .login-link-bar a:hover { opacity: 0.8; text-decoration: underline; }
+
+  /* ── FILE INPUT ── */
+  .reg-wrap input[type="file"] {
+    padding: 0.6rem !important;
+    cursor: pointer !important;
+  }
+  .reg-wrap input[type="file"]::file-selector-button {
+    background: rgba(168,255,62,0.1) !important;
+    border: 1px solid rgba(168,255,62,0.25) !important;
+    color: var(--lime) !important;
+    border-radius: 6px !important;
+    padding: 0.3rem 0.8rem !important;
+    font-family: 'Syne', sans-serif !important;
+    font-size: 0.78rem !important;
+    font-weight: 600 !important;
+    cursor: pointer !important;
+    margin-right: 0.8rem !important;
+    transition: background 0.2s !important;
+  }
+  .reg-wrap input[type="file"]::file-selector-button:hover {
+    background: rgba(168,255,62,0.2) !important;
+  }
+
+  /* ── PROGRESS INDICATOR ── */
+  .reg-progress {
+    display: flex; gap: 0.4rem; margin-bottom: 2rem;
+    animation: fadeUp 0.7s cubic-bezier(0.22,1,0.36,1) both;
+  }
+  .prog-dot {
+    height: 3px; border-radius: 2px; background: rgba(255,255,255,0.1);
+    flex: 1; transition: background 0.3s;
+  }
+  .prog-dot.active { background: var(--lime); box-shadow: 0 0 8px rgba(168,255,62,0.5); }
+
+  /* ── SCROLL BAR ── */
+  .reg-right::-webkit-scrollbar { width: 4px; }
+  .reg-right::-webkit-scrollbar-track { background: transparent; }
+  .reg-right::-webkit-scrollbar-thumb { background: rgba(168,255,62,0.2); border-radius: 2px; }
+
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* ── FLOATING PARTICLE ── */
+  .form-particle {
+    position: absolute; width: 1.5px; height: 1.5px; background: var(--lime);
+    border-radius: 50%; pointer-events: none; opacity: 0;
+    animation: fParticle var(--pd, 6s) var(--pdel, 0s) infinite ease-in-out;
+  }
+  @keyframes fParticle {
+    0% { transform: translateY(0) translateX(0) scale(0); opacity: 0; }
+    10% { opacity: 0.7; }
+    100% { transform: translateY(-120px) translateX(var(--px, 20px)) scale(1); opacity: 0; }
+  }
+</style>
+
+<div class="reg-wrap">
+  <div class="noise-overlay"></div>
+  <div class="bg-grid"></div>
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+
+  <div class="cursor-dot" id="cursorDot"></div>
+  <div class="cursor-ring" id="cursorRing"></div>
+
+  <div class="reg-page">
+
+    <!-- ════ LEFT PANEL ════ -->
+    <div class="reg-left">
+      <!-- Brand -->
+      <div class="reg-left-brand">
+        <img src="https://pub-1407f82391df4ab1951418d04be76914.r2.dev/uploads/5fb1396e-e6ac-406f-a3f7-f2aafe6b6f2a.jpeg"
+             alt="Logo" class="brand-logo">
+        <div class="brand-name">Green<span>Energy</span></div>
+      </div>
+
+      <!-- Main content -->
+      <div class="reg-left-main">
+        <div class="reg-left-tag">
+          <span class="tag-dot"></span>
+          Marketplace Live
+        </div>
+
+        <h2 class="reg-left-title">
+          Power the<br><span>Clean Future</span><br>Together
+        </h2>
+        <p class="reg-left-desc">
+          Join India's fastest-growing renewable energy marketplace. Trade, invest, and make a real impact.
+        </p>
+
+        <div class="feature-list">
+          <div class="feature-item" style="--fi-delay:0.1s">
+            <div class="feature-icon">☀️</div>
+            <div class="feature-text">
+              <strong>Trade Any Energy Type</strong>
+              Solar, wind, biogas, hydro — all in one place
+            </div>
+          </div>
+          <div class="feature-item" style="--fi-delay:0.2s">
+            <div class="feature-icon">📈</div>
+            <div class="feature-text">
+              <strong>Competitive Returns</strong>
+              Earn from renewable energy investments
+            </div>
+          </div>
+          <div class="feature-item" style="--fi-delay:0.3s">
+            <div class="feature-icon">🌿</div>
+            <div class="feature-text">
+              <strong>Track Your CO₂ Offset</strong>
+              See your real environmental impact in real time
+            </div>
+          </div>
+          <div class="feature-item" style="--fi-delay:0.4s">
+            <div class="feature-icon">🔒</div>
+            <div class="feature-text">
+              <strong>Secure & Transparent</strong>
+              Bank-grade security on every transaction
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div class="reg-stats">
+        <div class="reg-stat">
+          <div class="reg-stat-num">500+</div>
+          <div class="reg-stat-label">Users</div>
+        </div>
+        <div class="reg-stat">
+          <div class="reg-stat-num">1M+</div>
+          <div class="reg-stat-label">kWh Traded</div>
+        </div>
+        <div class="reg-stat">
+          <div class="reg-stat-num">₹50Cr</div>
+          <div class="reg-stat-label">Invested</div>
+        </div>
+      </div>
+
+      <!-- Deco SVG -->
+      <svg class="deco-lines" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="100" cy="100" r="90" stroke="#a8ff3e" stroke-width="1"/>
+        <circle cx="100" cy="100" r="70" stroke="#a8ff3e" stroke-width="1"/>
+        <circle cx="100" cy="100" r="50" stroke="#a8ff3e" stroke-width="1"/>
+        <line x1="0" y1="100" x2="200" y2="100" stroke="#a8ff3e" stroke-width="0.5"/>
+        <line x1="100" y1="0" x2="100" y2="200" stroke="#a8ff3e" stroke-width="0.5"/>
+      </svg>
+    </div>
+
+    <!-- ════ RIGHT PANEL (FORM) ════ -->
+    <div class="reg-right" id="regRight">
+
+      <!-- Progress bar -->
+      <div class="reg-progress">
+        <div class="prog-dot active"></div>
+        <div class="prog-dot active"></div>
+        <div class="prog-dot"></div>
+      </div>
+
+      <div class="reg-right-top">
+        <div class="reg-step-label">Step 01 of 03</div>
+        <h1 class="reg-title">Create your <span>account</span></h1>
+        <p class="reg-subtitle">Already have one? <a href="{% url 'accounts:login' %}" style="color:var(--lime);text-decoration:none;font-weight:600;">Sign in →</a></p>
+      </div>
+
+      <form method="post" enctype="multipart/form-data" class="reg-form" id="regForm">
+        {% csrf_token %}
+        {{ form|crispy }}
+
+        <button type="submit" class="btn-reg" id="submitBtn">
+          <span>Create Account</span>
+          <span class="btn-arrow">→</span>
+        </button>
+      </form>
+
+      <div class="login-link-bar">
+        By registering you agree to our <a href="#">Terms</a> & <a href="#">Privacy Policy</a>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  // ── Cursor
+  const dot = document.getElementById('cursorDot');
+  const ring = document.getElementById('cursorRing');
+  let mx=0,my=0,rx=0,ry=0;
+  document.addEventListener('mousemove', e => {
+    mx=e.clientX; my=e.clientY;
+    dot.style.left=mx+'px'; dot.style.top=my+'px';
+  });
+  function lerp(a,b,t){return a+(b-a)*t;}
+  function animCursor(){
+    rx=lerp(rx,mx,0.12); ry=lerp(ry,my,0.12);
+    ring.style.left=rx+'px'; ring.style.top=ry+'px';
+    requestAnimationFrame(animCursor);
+  }
+  animCursor();
+  document.querySelectorAll('a,button,input,select,.feature-item').forEach(el=>{
+    el.addEventListener('mouseenter',()=>ring.classList.add('hover'));
+    el.addEventListener('mouseleave',()=>ring.classList.remove('hover'));
+  });
+
+  // ── Form field focus glow effect
+  document.querySelectorAll('input,select,textarea').forEach(el=>{
+    el.addEventListener('focus',()=>{
+      el.style.boxShadow='0 0 0 3px rgba(168,255,62,0.12), 0 0 20px rgba(168,255,62,0.06)';
+    });
+    el.addEventListener('blur',()=>{
+      el.style.boxShadow='none';
+    });
+  });
+
+  // ── Submit shimmer
+  const btn = document.getElementById('submitBtn');
+  if(btn){
+    document.getElementById('regForm').addEventListener('submit', ()=>{
+      btn.innerHTML = '<span>Creating Account…</span><span style="animation:spin 0.8s linear infinite;display:inline-block">⚡</span>';
+      btn.style.opacity='0.85';
+      btn.style.pointerEvents='none';
+    });
+  }
+
+  // ── Subtle particle effect on reg-right
+  const right = document.getElementById('regRight');
+  if(right){
+    for(let i=0;i<8;i++){
+      const p=document.createElement('div');
+      p.className='form-particle';
+      p.style.cssText=`left:${10+Math.random()*80}%;bottom:${5+Math.random()*30}%;--pd:${5+Math.random()*6}s;--pdel:${Math.random()*5}s;--px:${(Math.random()-0.5)*60}px;`;
+      right.appendChild(p);
+    }
+  }
+})();
+</script>
+
+<style>
+@keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+</style>
+
+{% endblock %}

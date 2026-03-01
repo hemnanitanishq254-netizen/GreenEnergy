@@ -1,0 +1,100 @@
+{% load static %}
+
+<nav class="navbar navbar-expand-lg navbar-dark">
+    <div class="container">
+        <a class="navbar-brand" href="{% url 'home' %}">
+            <i class="fas fa-leaf"></i> GreenEnergy
+        </a>
+
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'home' %}">
+                        <i class="fas fa-home"></i> Home
+                    </a>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'marketplace:listing_list' %}">
+                        <i class="fas fa-bolt"></i> Marketplace
+                    </a>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'investments:projects_list' %}">
+                        <i class="fas fa-chart-line"></i> Investments
+                    </a>
+                </li>
+
+                {% if user.is_authenticated %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-user-circle"></i> {{ user.username }}
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li>
+                                <a class="dropdown-item" href="{% url 'accounts:dashboard' %}">
+                                    <i class="fas fa-tachometer-alt"></i> Dashboard
+                                </a>
+                            </li>
+
+                            {% if user.role == 'producer' %}
+                                <li>
+                                    <a class="dropdown-item" href="{% url 'marketplace:my_listings' %}">
+                                        <i class="fas fa-list"></i> My Listings
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="{% url 'marketplace:create_listing' %}">
+                                        <i class="fas fa-plus"></i> Create Listing
+                                    </a>
+                                </li>
+                            {% elif user.role == 'consumer' %}
+                                <li>
+                                    <a class="dropdown-item" href="{% url 'transactions:my_orders' %}">
+                                        <i class="fas fa-shopping-cart"></i> My Orders
+                                    </a>
+                                </li>
+                            {% elif user.role == 'investor' %}
+                                <li>
+                                    <a class="dropdown-item" href="{% url 'investments:my_investments' %}">
+                                        <i class="fas fa-money-bill-wave"></i> My Investments
+                                    </a>
+                                </li>
+                            {% endif %}
+
+                            <li>
+                                <a class="dropdown-item" href="{% url 'transactions:transaction_history' %}">
+                                    <i class="fas fa-history"></i> Transactions
+                                </a>
+                            </li>
+
+                            <li><hr class="dropdown-divider"></li>
+
+                            <li>
+                                <a class="dropdown-item" href="{% url 'accounts:logout' %}">
+                                    <i class="fas fa-sign-out-alt"></i> Logout
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                {% else %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'accounts:login' %}">
+                            <i class="fas fa-sign-in-alt"></i> Login
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link btn btn-light text-success px-3 ms-2" href="{% url 'accounts:register' %}">
+                            <i class="fas fa-user-plus"></i> Register
+                        </a>
+                    </li>
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+</nav>

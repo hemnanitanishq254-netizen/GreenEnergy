@@ -1,0 +1,543 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ listing.title }} - GreenEnergy{% endblock %}
+
+{% block content %}
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Cabinet+Grotesk:wght@300;400;500;700;800&display=swap');
+
+  :root {
+    --lime: #a8ff3e;
+    --lime-dim: #7acc1f;
+    --navy: #050c15;
+    --slate-mid: #0e1f33;
+    --card-glass: rgba(255,255,255,0.03);
+    --border-glass: rgba(168,255,62,0.12);
+    --text-primary: #eef4ff;
+    --text-muted: #6a8aaa;
+    --cyan: #00d4ff;
+    --glow-lime: 0 0 40px rgba(168,255,62,0.35);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  .detail-wrap {
+    font-family: 'Cabinet Grotesk', sans-serif;
+    background: var(--navy);
+    color: var(--text-primary);
+    min-height: 100vh;
+    position: relative;
+    padding-bottom: 5rem;
+  }
+
+  /* ── NOISE + GRID ── */
+  .noise-overlay {
+    position: fixed; inset: 0; z-index: 0; pointer-events: none; opacity: 0.035;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-size: 256px;
+  }
+  .bg-grid {
+    position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background-image:
+      linear-gradient(rgba(168,255,62,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(168,255,62,0.04) 1px, transparent 1px);
+    background-size: 64px 64px;
+    mask-image: radial-gradient(ellipse 80% 80% at 50% 20%, black 10%, transparent 100%);
+  }
+
+  /* ── ORBS ── */
+  .orb { position: fixed; border-radius: 50%; filter: blur(120px); pointer-events: none; z-index: 0; }
+  .orb-1 { width: 600px; height: 600px; background: radial-gradient(circle, rgba(168,255,62,0.09) 0%, transparent 70%); top: -200px; left: -200px; animation: floatOrb1 12s ease-in-out infinite; }
+  .orb-2 { width: 400px; height: 400px; background: radial-gradient(circle, rgba(0,212,255,0.07) 0%, transparent 70%); bottom: 0; right: -100px; animation: floatOrb2 14s ease-in-out infinite; }
+  @keyframes floatOrb1 { 0%,100% { transform: translate(0,0); } 50% { transform: translate(40px,-50px); } }
+  @keyframes floatOrb2 { 0%,100% { transform: translate(0,0); } 50% { transform: translate(-30px,40px); } }
+
+  /* ── CURSOR ── */
+  .cursor-dot { width: 8px; height: 8px; background: var(--lime); border-radius: 50%; position: fixed; pointer-events: none; z-index: 9999; transform: translate(-50%,-50%); }
+  .cursor-ring { width: 36px; height: 36px; border: 1.5px solid rgba(168,255,62,0.5); border-radius: 50%; position: fixed; pointer-events: none; z-index: 9998; transform: translate(-50%,-50%); transition: width 0.25s, height 0.25s, border-color 0.25s; }
+  .cursor-ring.hover { width: 55px; height: 55px; border-color: var(--lime); }
+
+  /* ── LAYOUT ── */
+  .detail-inner {
+    position: relative; z-index: 1;
+    max-width: 1200px; margin: 0 auto; padding: 0 2rem;
+  }
+
+  /* ── BREADCRUMB / BACK ── */
+  .detail-nav {
+    padding: 2rem 0 0;
+    display: flex; align-items: center; gap: 0.6rem;
+    animation: fadeUp 0.6s cubic-bezier(0.22,1,0.36,1) both;
+  }
+  .back-link {
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    color: var(--text-muted); font-size: 0.85rem; text-decoration: none;
+    transition: color 0.2s;
+  }
+  .back-link:hover { color: var(--lime); }
+  .breadcrumb-sep { color: rgba(255,255,255,0.15); font-size: 0.8rem; }
+  .breadcrumb-cur { color: var(--text-muted); font-size: 0.85rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 300px; }
+
+  /* ── HERO STRIP ── */
+  .detail-hero {
+    padding: 2rem 0 2.5rem;
+    display: flex; align-items: flex-start; justify-content: space-between; gap: 1.5rem; flex-wrap: wrap;
+    animation: fadeUp 0.6s cubic-bezier(0.22,1,0.36,1) 0.05s both;
+  }
+  .detail-hero-left {}
+  .energy-badge {
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    padding: 0.38rem 0.9rem; border-radius: 100px;
+    font-size: 0.76rem; font-weight: 700; letter-spacing: 0.04em;
+    font-family: 'Syne', sans-serif; margin-bottom: 0.9rem;
+  }
+  .badge-solar   { background: rgba(255,200,50,0.12);  border: 1px solid rgba(255,200,50,0.25);  color: #ffd04a; }
+  .badge-wind    { background: rgba(100,180,255,0.12); border: 1px solid rgba(100,180,255,0.25); color: #64b4ff; }
+  .badge-biogas  { background: rgba(80,220,120,0.12);  border: 1px solid rgba(80,220,120,0.25);  color: #50dc78; }
+  .badge-hydro   { background: rgba(80,180,255,0.12);  border: 1px solid rgba(0,212,255,0.25);   color: var(--cyan); }
+
+  .detail-title {
+    font-family: 'Syne', sans-serif; font-size: clamp(1.6rem, 3vw, 2.4rem);
+    font-weight: 800; letter-spacing: -0.02em; color: var(--text-primary);
+    line-height: 1.15; margin-bottom: 0.7rem;
+  }
+  .detail-meta-row {
+    display: flex; align-items: center; gap: 1.2rem; flex-wrap: wrap;
+  }
+  .detail-meta-item {
+    display: flex; align-items: center; gap: 0.45rem;
+    font-size: 0.85rem; color: var(--text-muted);
+  }
+
+  .status-badge {
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    padding: 0.38rem 0.9rem; border-radius: 100px;
+    background: rgba(168,255,62,0.08); border: 1px solid rgba(168,255,62,0.2);
+    color: var(--lime); font-size: 0.76rem; font-weight: 700; font-family: 'Syne', sans-serif;
+  }
+  .status-dot { width: 5px; height: 5px; background: var(--lime); border-radius: 50%; animation: pulse 2s ease infinite; box-shadow: 0 0 6px var(--lime); }
+  @keyframes pulse { 0%,100% { transform: scale(1); opacity:1; } 50% { transform: scale(1.6); opacity:0.5; } }
+
+  /* ── MAIN GRID ── */
+  .detail-grid {
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    gap: 1.8rem;
+    align-items: start;
+  }
+  @media (max-width: 900px) { .detail-grid { grid-template-columns: 1fr; } }
+
+  /* ── LEFT COLUMN ── */
+  .detail-left { display: flex; flex-direction: column; gap: 1.5rem; }
+
+  /* Glass card base */
+  .g-card {
+    background: var(--card-glass);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 18px; overflow: hidden;
+    animation: fadeUp 0.6s cubic-bezier(0.22,1,0.36,1) var(--cd, 0.1s) both;
+  }
+  .g-card-header {
+    padding: 1.1rem 1.5rem;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    display: flex; align-items: center; gap: 0.6rem;
+  }
+  .g-card-header-icon { font-size: 1rem; }
+  .g-card-header-title {
+    font-family: 'Syne', sans-serif; font-size: 0.85rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted);
+  }
+  .g-card-body { padding: 1.5rem; }
+
+  /* Pricing grid */
+  .pricing-grid {
+    display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem;
+  }
+  @media (max-width: 600px) { .pricing-grid { grid-template-columns: 1fr 1fr; } }
+  .price-block {
+    background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05);
+    border-radius: 14px; padding: 1.1rem 1.2rem; text-align: center;
+    transition: all 0.25s;
+  }
+  .price-block:hover { border-color: rgba(168,255,62,0.15); }
+  .price-block.highlight {
+    background: rgba(168,255,62,0.06); border-color: rgba(168,255,62,0.2);
+  }
+  .price-label { font-size: 0.68rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.5rem; font-family: 'Syne', sans-serif; }
+  .price-value { font-family: 'Syne', sans-serif; font-size: 1.5rem; font-weight: 800; color: var(--text-primary); line-height: 1; }
+  .price-value.lime { color: var(--lime); text-shadow: 0 0 20px rgba(168,255,62,0.3); }
+  .price-value.cyan { color: var(--cyan); }
+  .price-unit { font-size: 0.72rem; color: var(--text-muted); margin-top: 0.25rem; }
+
+  /* Info grid */
+  .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  @media (max-width: 500px) { .info-grid { grid-template-columns: 1fr; } }
+  .info-item {
+    display: flex; align-items: flex-start; gap: 0.8rem;
+    background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05);
+    border-radius: 12px; padding: 1rem;
+    transition: border-color 0.25s;
+  }
+  .info-item:hover { border-color: rgba(168,255,62,0.12); }
+  .info-icon {
+    width: 32px; height: 32px; border-radius: 8px;
+    background: rgba(168,255,62,0.08); border: 1px solid rgba(168,255,62,0.15);
+    display: flex; align-items: center; justify-content: center; font-size: 0.9rem; flex-shrink: 0;
+  }
+  .info-label { font-size: 0.68rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.25rem; font-family: 'Syne', sans-serif; }
+  .info-value { font-size: 0.9rem; color: var(--text-primary); font-weight: 500; }
+
+  /* Description */
+  .desc-text { font-size: 0.95rem; color: var(--text-muted); line-height: 1.85; }
+
+  /* Listed date */
+  .listed-date { font-size: 0.8rem; color: rgba(106,138,170,0.6); }
+
+  /* ── RIGHT COLUMN (STICKY SIDEBAR) ── */
+  .detail-right { position: sticky; top: 1.5rem; }
+
+  .sidebar-card {
+    background: var(--card-glass);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 18px; overflow: hidden;
+    animation: fadeUp 0.6s cubic-bezier(0.22,1,0.36,1) 0.15s both;
+  }
+  .sidebar-accent {
+    height: 3px; background: linear-gradient(90deg, var(--lime), var(--cyan));
+  }
+  .sidebar-header {
+    padding: 1.2rem 1.4rem;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    display: flex; align-items: center; gap: 0.6rem;
+  }
+  .sidebar-header-title {
+    font-family: 'Syne', sans-serif; font-size: 1rem; font-weight: 800; color: var(--text-primary);
+  }
+  .sidebar-body { padding: 1.4rem; display: flex; flex-direction: column; gap: 1rem; }
+
+  /* Mini price recap */
+  .sidebar-price-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 0.6rem 0; border-bottom: 1px solid rgba(255,255,255,0.04);
+    font-size: 0.87rem;
+  }
+  .sidebar-price-row:last-of-type { border-bottom: none; }
+  .sidebar-price-row .spr-label { color: var(--text-muted); }
+  .sidebar-price-row .spr-val { font-weight: 600; color: var(--text-primary); font-family: 'Syne', sans-serif; }
+  .sidebar-price-row .spr-val.lime { color: var(--lime); font-size: 1rem; }
+
+  /* Info alert */
+  .sidebar-info {
+    background: rgba(168,255,62,0.05); border: 1px solid rgba(168,255,62,0.12);
+    border-radius: 10px; padding: 0.8rem 1rem;
+    font-size: 0.82rem; color: var(--text-muted); display: flex; align-items: flex-start; gap: 0.6rem;
+  }
+  .sidebar-warn {
+    background: rgba(255,180,50,0.06); border: 1px solid rgba(255,180,50,0.18);
+    border-radius: 10px; padding: 0.8rem 1rem;
+    font-size: 0.82rem; color: #ffb832; display: flex; align-items: flex-start; gap: 0.6rem;
+  }
+
+  /* CTA Buttons */
+  .btn-buy {
+    width: 100%; background: var(--lime); color: #050c15;
+    font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1rem;
+    letter-spacing: 0.03em; padding: 1rem 2rem; border-radius: 12px;
+    border: none; cursor: pointer; text-decoration: none;
+    display: flex; align-items: center; justify-content: center; gap: 0.6rem;
+    transition: all 0.3s cubic-bezier(0.22,1,0.36,1);
+    position: relative; overflow: hidden;
+  }
+  .btn-buy::before {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(135deg, #c5ff6a, var(--lime));
+    opacity: 0; transition: opacity 0.3s;
+  }
+  .btn-buy:hover { transform: translateY(-3px); box-shadow: 0 0 30px rgba(168,255,62,0.4), 0 8px 25px rgba(0,0,0,0.3); }
+  .btn-buy:hover::before { opacity: 1; }
+  .btn-buy span { position: relative; z-index: 1; }
+
+  .btn-secondary-action {
+    width: 100%; background: transparent;
+    border: 1px solid rgba(168,255,62,0.25); border-radius: 12px;
+    color: var(--lime); font-family: 'Syne', sans-serif; font-weight: 700;
+    font-size: 0.9rem; padding: 0.85rem; cursor: pointer; text-decoration: none;
+    display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+    transition: all 0.3s cubic-bezier(0.22,1,0.36,1); position: relative; overflow: hidden;
+  }
+  .btn-secondary-action::before {
+    content: ''; position: absolute; inset: 0;
+    background: rgba(168,255,62,0.06); transform: scaleX(0); transform-origin: left;
+    transition: transform 0.3s cubic-bezier(0.22,1,0.36,1);
+  }
+  .btn-secondary-action:hover { border-color: var(--lime); }
+  .btn-secondary-action:hover::before { transform: scaleX(1); }
+  .btn-secondary-action span { position: relative; z-index: 1; }
+
+  .btn-danger-action {
+    width: 100%; background: transparent;
+    border: 1px solid rgba(255,80,80,0.25); border-radius: 12px;
+    color: #ff6b6b; font-family: 'Syne', sans-serif; font-weight: 700;
+    font-size: 0.9rem; padding: 0.85rem; cursor: pointer; text-decoration: none;
+    display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+    transition: all 0.3s cubic-bezier(0.22,1,0.36,1);
+  }
+  .btn-danger-action:hover { border-color: #ff6b6b; background: rgba(255,80,80,0.06); }
+
+  .btn-plain {
+    width: 100%; background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.08); border-radius: 12px;
+    color: var(--text-muted); font-family: 'Syne', sans-serif; font-weight: 700;
+    font-size: 0.9rem; padding: 0.85rem; cursor: pointer; text-decoration: none;
+    display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+    transition: all 0.25s;
+  }
+  .btn-plain:hover { border-color: rgba(168,255,62,0.15); color: var(--text-primary); }
+
+  /* Sidebar footer */
+  .sidebar-footer {
+    padding: 0.9rem 1.4rem;
+    border-top: 1px solid rgba(255,255,255,0.05);
+    display: flex; align-items: center; gap: 0.5rem;
+    font-size: 0.75rem; color: var(--text-muted);
+  }
+
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+</style>
+
+<div class="detail-wrap">
+  <div class="noise-overlay"></div>
+  <div class="bg-grid"></div>
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+
+  <div class="cursor-dot" id="cursorDot"></div>
+  <div class="cursor-ring" id="cursorRing"></div>
+
+  <div class="detail-inner">
+
+    <!-- ── BREADCRUMB ── -->
+    <div class="detail-nav">
+      <a href="{% url 'marketplace:listing_list' %}" class="back-link">← Marketplace</a>
+      <span class="breadcrumb-sep">/</span>
+      <span class="breadcrumb-cur">{{ listing.title }}</span>
+    </div>
+
+    <!-- ── HERO ── -->
+    <div class="detail-hero">
+      <div class="detail-hero-left">
+        <div class="energy-badge badge-{{ listing.energy_type }}">
+          {% if listing.energy_type == 'solar' %}☀️ Solar
+          {% elif listing.energy_type == 'wind' %}💨 Wind
+          {% elif listing.energy_type == 'biogas' %}🌿 Biogas
+          {% elif listing.energy_type == 'hydro' %}💧 Hydro
+          {% endif %}
+        </div>
+        <h1 class="detail-title">{{ listing.title }}</h1>
+        <div class="detail-meta-row">
+          <div class="detail-meta-item">👤 <span>{{ listing.producer.get_full_name|default:listing.producer.username }}</span></div>
+          <div class="detail-meta-item">📍 <span>{{ listing.location }}</span></div>
+          <span class="status-badge"><span class="status-dot"></span>{{ listing.get_status_display }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── MAIN GRID ── -->
+    <div class="detail-grid">
+
+      <!-- LEFT COLUMN -->
+      <div class="detail-left">
+
+        <!-- Pricing card -->
+        <div class="g-card" style="--cd: 0.1s">
+          <div class="g-card-header">
+            <span class="g-card-header-icon">💰</span>
+            <span class="g-card-header-title">Pricing & Availability</span>
+          </div>
+          <div class="g-card-body">
+            <div class="pricing-grid">
+              <div class="price-block">
+                <div class="price-label">Quantity</div>
+                <div class="price-value">{{ listing.quantity_kwh }}</div>
+                <div class="price-unit">kWh available</div>
+              </div>
+              <div class="price-block">
+                <div class="price-label">Price / kWh</div>
+                <div class="price-value lime">₹{{ listing.price_per_kwh }}</div>
+                <div class="price-unit">per kilowatt-hour</div>
+              </div>
+              <div class="price-block highlight">
+                <div class="price-label">Total Value</div>
+                <div class="price-value cyan">₹{{ listing.total_value }}</div>
+                <div class="price-unit">full listing</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Listing details card -->
+        <div class="g-card" style="--cd: 0.15s">
+          <div class="g-card-header">
+            <span class="g-card-header-icon">📋</span>
+            <span class="g-card-header-title">Listing Details</span>
+          </div>
+          <div class="g-card-body">
+            <div class="info-grid">
+              <div class="info-item">
+                <div class="info-icon">👤</div>
+                <div>
+                  <div class="info-label">Producer</div>
+                  <div class="info-value">{{ listing.producer.get_full_name|default:listing.producer.username }}</div>
+                </div>
+              </div>
+              <div class="info-item">
+                <div class="info-icon">📍</div>
+                <div>
+                  <div class="info-label">Location</div>
+                  <div class="info-value">{{ listing.location }}</div>
+                </div>
+              </div>
+              <div class="info-item">
+                <div class="info-icon">📅</div>
+                <div>
+                  <div class="info-label">Available From</div>
+                  <div class="info-value">{{ listing.available_from }}</div>
+                </div>
+              </div>
+              <div class="info-item">
+                <div class="info-icon">⏳</div>
+                <div>
+                  <div class="info-label">Available Until</div>
+                  <div class="info-value">{{ listing.available_until }}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Description card -->
+        <div class="g-card" style="--cd: 0.2s">
+          <div class="g-card-header">
+            <span class="g-card-header-icon">📝</span>
+            <span class="g-card-header-title">Description</span>
+          </div>
+          <div class="g-card-body" style="display:flex;flex-direction:column;gap:1rem">
+            <p class="desc-text">{{ listing.description }}</p>
+            <div class="listed-date">Listed on {{ listing.created_at|date:"M d, Y" }}</div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- RIGHT COLUMN (SIDEBAR) -->
+      <div class="detail-right">
+        <div class="sidebar-card">
+          <div class="sidebar-accent"></div>
+
+          <div class="sidebar-header">
+            <span>⚡</span>
+            <span class="sidebar-header-title">Purchase Energy</span>
+          </div>
+
+          <div class="sidebar-body">
+            <!-- Price recap -->
+            <div>
+              <div class="sidebar-price-row">
+                <span class="spr-label">Quantity</span>
+                <span class="spr-val">{{ listing.quantity_kwh }} kWh</span>
+              </div>
+              <div class="sidebar-price-row">
+                <span class="spr-label">Rate</span>
+                <span class="spr-val">₹{{ listing.price_per_kwh }} / kWh</span>
+              </div>
+              <div class="sidebar-price-row">
+                <span class="spr-label">Total</span>
+                <span class="spr-val lime">₹{{ listing.total_value }}</span>
+              </div>
+            </div>
+
+            {% if user.is_authenticated %}
+              {% if user.role == 'consumer' %}
+                {% if listing.status == 'active' %}
+                  <div class="sidebar-info">
+                    <span>ℹ️</span>
+                    <span>Buy clean energy directly from a verified producer. Available: <strong style="color:var(--lime)">{{ listing.quantity_kwh }} kWh</strong></span>
+                  </div>
+                  <a href="{% url 'transactions:create_order' listing.pk %}" class="btn-buy">
+                    <span>⚡</span><span>Buy Now</span>
+                  </a>
+                {% else %}
+                  <div class="sidebar-warn">
+                    <span>⚠️</span>
+                    <span>This listing is currently not available for purchase.</span>
+                  </div>
+                {% endif %}
+
+              {% elif user == listing.producer %}
+                <div class="sidebar-info">
+                  <span>📌</span>
+                  <span>This is your listing. Manage it below.</span>
+                </div>
+                <a href="{% url 'marketplace:update_listing' listing.pk %}" class="btn-secondary-action">
+                  <span>✏️</span><span>Edit Listing</span>
+                </a>
+                <a href="{% url 'marketplace:delete_listing' listing.pk %}" class="btn-danger-action"
+                   onclick="return confirm('Are you sure you want to delete this listing?')">
+                  <span>🗑</span><span>Delete Listing</span>
+                </a>
+
+              {% else %}
+                <div class="sidebar-warn">
+                  <span>⚠️</span>
+                  <span>Only consumers can purchase energy listings.</span>
+                </div>
+              {% endif %}
+
+            {% else %}
+              <div class="sidebar-warn">
+                <span>🔒</span>
+                <span>Please log in to purchase this energy listing.</span>
+              </div>
+              <a href="{% url 'accounts:login' %}" class="btn-buy">
+                <span>→</span><span>Sign In</span>
+              </a>
+              <a href="{% url 'accounts:register' %}" class="btn-plain">
+                <span>Create an Account</span>
+              </a>
+            {% endif %}
+          </div>
+
+          <div class="sidebar-footer">
+            🛡 Secure payment · Verified sellers
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const dot = document.getElementById('cursorDot');
+  const ring = document.getElementById('cursorRing');
+  let mx=0,my=0,rx=0,ry=0;
+  document.addEventListener('mousemove', e => {
+    mx=e.clientX; my=e.clientY;
+    dot.style.left=mx+'px'; dot.style.top=my+'px';
+  });
+  function lerp(a,b,t){return a+(b-a)*t;}
+  (function tick(){
+    rx=lerp(rx,mx,0.12); ry=lerp(ry,my,0.12);
+    ring.style.left=rx+'px'; ring.style.top=ry+'px';
+    requestAnimationFrame(tick);
+  })();
+  document.querySelectorAll('a,button,.info-item,.price-block').forEach(el=>{
+    el.addEventListener('mouseenter',()=>ring.classList.add('hover'));
+    el.addEventListener('mouseleave',()=>ring.classList.remove('hover'));
+  });
+})();
+</script>
+
+{% endblock %}
